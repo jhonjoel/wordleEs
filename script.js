@@ -1,70 +1,101 @@
-let lista = ["ARBOL", "ANGEL", "MARCO", "COMAS", "ARCOS", "ALOHA"]
-//let palabra = "ARBOL"
-let palabra = lista [Math.floor(Math.random()*lista.length)] //primero que me genere un numero ramdom luego que lo redondee y luego tome un numero de mi array lista 
-//alert(palabra)
-let intentos = 6
-const API = "https://random-word-api.herokuapp.com/word?length=5&lang=es"
+const lista = ["ARBOL", "ANGEL", "MARCO", "COMAS", "ARCOS", "ALOHA"];
+const API = "https://random-word-api.herokuapp.com/word?length=5&lang=es";
+
+let palabra = lista[Math.floor(Math.random() * lista.length)];
+let intentos = 6;
 
 fetch(API)
-    .then(response => response.json()) // => es una funcion anónima
-    .then(response => {
-        console.log(response)
-        palabra = response [0].toUpperCase()
-        console.log(palabra)    
+    .then(r => r.json())
+    .then(r => {
+        if (r && r[0]) {
+            palabra = r[0].toUpperCase();
+        }
     })
-    .catch(err => palabra = lista[Math.floor(Math.ramdom()*lista.length)])
+    .catch(() => {
+        palabra = lista[Math.floor(Math.random() * lista.length)];
+    });
 
+const input = document.getElementById("guess-input");
+const boton = document.getElementById("guess-button");
 
-const BOTON = document.getElementById("guess-button")
-BOTON.addEventListener("click", intentar)
-
-function intentar(){
-    const GRID = document.getElementById("grid")
-    const ROW = document.createElement("div")//sirve para crear un elemento, en este caso un div
-    ROW.className = "row" // a ese mismo div le asignamos la clase "row"
-    const INTENTO = leerIntento()
-    if (INTENTO == palabra){
-        terminar("<h1>Ganaste perrito! :D</h1>")
-        GRID.style.display = "none"
-        return 
+input.addEventListener("keyup", e => {
+    input.value = input.value.replace(/[^a-zA-ZñÑ]/g, "").toUpperCase();
+    if (e.key === "Enter") {
+        intentar();
+        return;
     }
-    for (let i in palabra){ //sirve para recorrer letra por letra en la palabra ingresada.
-        const SPAN = document.createElement("span")
-        SPAN.className = "letter"
-        if (palabra[i]==INTENTO[i]){
-            SPAN.innerHTML = INTENTO[i]
-            SPAN.style.backgroundColor = "green"
-        }
-        //si no esta en el lugar indicado, verificar si existe en la palabra e imprimir "amarillo"; si no está en la palabra imprimir "gris"
-        else if (palabra.includes(INTENTO[i])) {
-            SPAN.innerHTML = INTENTO[i]
-            SPAN.style.backgroundColor = "yellow"
-            //alert(INTENTO[i]+" amarillo")
-        }
-        else {
-            SPAN.innerHTML = INTENTO[i]
-            SPAN.style.backgroundColor = "grey"
-            //alert(INTENTO[i]+" gris")
-        }
-        ROW.appendChild(SPAN) //agrega
+    boton.disabled = input.value.length !== 5;
+});
+
+boton.addEventListener("click", intentar);
+
+function intentar() {
+    const GRID = document.getElementById("grid");
+    const ROW = document.createElement("div");
+    ROW.className = "row";
+    const INTENTO = leerIntento();
+
+    if (INTENTO.length !== 5) {
+        mostrarMensaje("La palabra debe tener 5 letras");
+        return;
     }
-    GRID.appendChild(ROW)//agrega
-    intentos-- //sirve para restar en 1 la cantidad de intentos de nuestra variable definida 
-    if (intentos==0){
-        terminar("<h1>perdiste, anda pashá bobo!</h1>")
-        GRID.style.display = "none"
+
+    const resultado = evaluar(INTENTO);
+
+    for (let i = 0; i < INTENTO.length; i++) {
+        const SPAN = document.createElement("span");
+        SPAN.className = "letter " + resultado[i];
+        SPAN.textContent = INTENTO[i];
+        ROW.appendChild(SPAN);
+    }
+
+    GRID.appendChild(ROW);
+    intentos--;
+    input.value = "";
+    boton.disabled = true;
+
+    if (INTENTO === palabra) {
+        terminar("¡Ganaste!");
+    } else if (intentos === 0) {
+        terminar(`¡Perdiste! La palabra era ${palabra}`);
     }
 }
 
-function leerIntento(){
-    let intento = document.getElementById("guess-input").value
-    intento = intento.toUpperCase()
-    return intento 
+function leerIntento() {
+    return input.value.toUpperCase();
 }
 
-function terminar(mensaje){
-    BOTON.disabled = true // para deshabilitar el boton una vez que nos quedemos sin intentos 
-    let contenedor = document.getElementById("guesses")
-    contenedor.innerHTML = mensaje
+function mostrarMensaje(mensaje) {
+    const elem = document.getElementById("message");
+    elem.textContent = mensaje;
+    setTimeout(() => (elem.textContent = ""), 2000);
+}
+
+function terminar(mensaje) {
+    boton.disabled = true;
+    input.disabled = true;
+    document.getElementById("guesses").innerHTML = `<h2>${mensaje}</h2>`;
+}
+
+function evaluar(INTENTO) {
+    const result = Array(5).fill("absent");
+    const letras = {};
+    for (const l of palabra) {
+        letras[l] = (letras[l] || 0) + 1;
+    }
+    for (let i = 0; i < 5; i++) {
+        if (INTENTO[i] === palabra[i]) {
+            result[i] = "correct";
+            letras[INTENTO[i]]--;
+        }
+    }
+    for (let i = 0; i < 5; i++) {
+        if (result[i] === "correct") continue;
+        if (letras[INTENTO[i]] > 0) {
+            result[i] = "present";
+            letras[INTENTO[i]]--;
+        }
+    }
+    return result;
 }
 
