@@ -9,11 +9,13 @@
     </head>
     <body>
         <h1>Wordle</h1>
-        <input type="text" id="guess-input">
-        <button id="guess-button">Intentar</button>
-        <p>Ingrese una palabra de 5 letras en español:</p>
-        <div id="grid">
+        <div class="input-area">
+            <p>Ingrese una palabra de 5 letras en español:</p>
+            <input type="text" id="guess-input" maxlength="5" />
+            <button id="guess-button" disabled>Intentar</button>
+            <p id="message"></p>
         </div>
+        <div id="grid"></div>
         <p id="guesses"></p>
     </body>
 </html>
